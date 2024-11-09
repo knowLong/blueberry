@@ -7,6 +7,7 @@
 // then句内の引数には、成功の場合の結果が渡される。
 
 import {readFile} from "fs/promises"
+import { resolve } from "path";
 const p = readFile("foo.txt", "utf8");
 // resultの型がstringになっているのは、非同期処理(この場合はreadFile())の成功時の戻り値がstring型であるから。
 p.then((result: string) => {
@@ -77,3 +78,30 @@ sleepRejectOrResolve(2000).then(() => {
 }).catch(() => {
     console.log("失敗です");
 });
+
+// 8.3.5 Promiseの静的メソッド(1)
+// Promise.resolveとPromise.reject
+// これらは与えられた引数をPromiseの結果として即座に成功/失敗するPromiseオブジェクトを作るためのメソッド。
+const p2 = Promise.resolve(100);
+p2.then((result) => {
+    console.log(`結果は${result}です。`);
+});
+
+// new PromiseでPromise.resolve()を作成する方法
+new Promise<number>((resolve) => {
+    return resolve(100);
+}).then((result) => {
+    console.log(`結果は${result}です。`)
+});
+
+const p3 = Promise.reject(200);
+p3.catch((result) => {
+    console.log(`失敗！結果は${result}です。`);
+});
+// new PromiseでPromise.reject()を作成する方法
+new Promise<number>((reject) => {
+    return reject(200);
+}).catch((result) => {
+    console.log(`失敗！結果は${result}です。`);
+});
+// ※Promiseは非同期処理だから実行結果は必ず同期処理が完了した後に呼び出される。
