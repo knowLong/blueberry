@@ -105,3 +105,74 @@ new Promise<number>((reject) => {
     console.log(`失敗！結果は${result}です。`);
 });
 // ※Promiseは非同期処理だから実行結果は必ず同期処理が完了した後に呼び出される。
+
+// 8.3.6 Promiseの静的メソッド(2)
+// Promise.all()→複数のPromiseオブジェクトを合成するメソッド
+/*Promiseオブジェクトの配列を引数として受け取り、すべての非同期処理が成功したら、
+成功となるPromiseオブジェクトを返す  */
+// 複数の非同期処理を並行に・同時に行いたい場合に適している。
+// 例えば、3つのファイルの読み込みを同時並行で行い、すべての読み込みが終わったら次に進むという処理
+// 非同期処理開始
+const pApple = readFile("apple.txt", "utf-8");
+const pGorilla = readFile("gorilla.txt", "utf-8");
+const pOtter = readFile("otter.txt", "utf-8");
+/* 3つ全ての非同期処理が完了した場合、以下のPromise.allも成功となり、新しいPromiseオブジェクトを返す。
+このPromiseの結果は配列となる。(resultsは配列)この配列には、各Promiseの結果が格納されている。
+*/
+const p4 = Promise.all([pApple, pGorilla, pOtter]); // こいつは結果待ちの状態(then句みたい)既に非同期処理は始まっている。
+p4.then((results) => {
+    console.log("apple.txt:", results[0]);
+    console.log("gorilla.txt:", results[1]);
+    console.log("otter.txt:", results[2]);
+});
+p4.catch((e) => {
+    console.log("3つの非同期処理の内どれかが失敗したため、Promise.allのオブジェクトの結果も失敗となった。");
+});
+/* Promise.allが返すPromiseオブジェクトの特徴は、「Promise.allに与えられたPromiseがすべて成功となったら成功する。
+与えられたPromiseの内どれかが失敗となったら失敗する。」*/
+
+// もっとシンプルな書き方
+const p5 = Promise.all([
+    readFile("apple.txt", "utf-8"), 
+    readFile("gorilla.txt", "utf-8"),
+    readFile("otter.txt", "utf-8")
+]);
+// Promiseの結果をthen句に渡す際に直接分割代入できる
+// 分割代入して見た目を綺麗にしよう
+p5.then(([apple, gorilla, otter]) => {
+    console.log("apple.txt", apple);
+    console.log("gorilla.txt", gorilla);
+    console.log("otter.txt", otter);
+}).catch((e) => {
+    console.log("3つの非同期処理の内どれかが失敗した。");
+});
+
+// Promise.race→受け取った複数のPromiseオブジェクトの内、成否に関わらず最も早く返した結果を受け取るPromiseオブジェクト
+const p6 = Promise.race([
+    readFile("apple.txt", "utf-8"),
+    readFile("gorilla.txt", "utf-8"),
+    readFile("otter.txt", "utf-8")
+]);
+// resultには最も早く非同期処理が完了したPromiseの結果が入る。
+p6.then((result) => {
+    console.log(result);
+}).catch((e) => {
+    console.log("失敗");
+});
+/*Promise.raceの使い道
+→タイムアウト(ファイルの読み込みに5秒以上かかったらタイムアウトさせるなど)*/
+const sleepReject = (duration: number) => {
+    return new Promise<never>((resolve, reject) => {
+        setTimeout(reject, duration);
+    });
+};
+
+Promise.race([
+    readFile("apple.txt", "utf-8"),
+    sleepReject(2000)
+]).then((result) => {
+    console.log("2秒以内にファイルを読み取ることができました。",result);
+}).catch((e) => {
+    console.log("ファイルの読み込みに長時間かかったため、タイムアウトしました。");
+});
+// 時間で区切って次の処理に移らせたい場合に役立つ(ファイルの読み込みの処理自体は中断するわけではないが...)
