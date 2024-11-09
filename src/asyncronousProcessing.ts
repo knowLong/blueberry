@@ -27,5 +27,53 @@ p.finally(()=>{
     console.log("終わりました");
 })
 
+// 8.3.4 自分でPromiseオブジェクトを作る
+// Promiseコンストラクタは1つの型引数<結果の型>と1つの引数を持つ
+// ジェネリクス<>には後続のメソッドに渡すデータの型を、引数()には1つのアロー関数を渡す。
+// 引数に渡されるアロー関数をexecutor関数と呼ぶ。
+// その関数の引数にはresolveを渡す。(resolveは内部で用意されている関数)
+// resolveの引数の中にはPromiseの結果が格納される
+// Promiseオブジェクトは最初は未解決の状態だが、このresolve関数が呼び出されるとPromiseが実行完了を意味することになる。
 
+const p1 = new Promise<number>((resolve) => {
+    setTimeout(()=>{
+        resolve(100);
+    }, 3000);
+});
 
+p1.then((num) => {
+    console.log(`結果は${num}`);
+});
+
+// durationミリ秒後にresolveを呼び出す非同期処理
+// つまり、durationミリ秒後に、Promiseが実行完了となる。
+const sleep = (duration: number) => {
+    return new Promise<void>((resolve) => {
+        // 関数を引数として渡す際は「()」が不要。単体で実行させるには「()」が必要。
+        setTimeout(resolve, duration);
+    })
+};
+
+sleep(3000).then(() => {
+    console.log("3秒経ちました");
+});
+
+// executor関数に渡されるresolve以外の引数関数「reject」
+// Promiseコンストラクタ内でrejectを呼び出した場合はPromiseが失敗する。
+// そして、catch文が実行される。
+// 下記のsleepRejectOrResolveメソッドは引数で渡された値が1000未満の場合は失敗し、それ以外の場合は成功する非同期処理。
+const sleepRejectOrResolve = (duration: number) => {
+    return new Promise<void>((resolve, reject) => {
+        if(duration < 1000){
+            setTimeout(reject, duration);
+        } else {
+            setTimeout(resolve, duration);
+        }
+    })
+};
+
+sleepRejectOrResolve(2000).then(() => {
+    console.log("成功です")
+}).catch(() => {
+    console.log("失敗です");
+});
