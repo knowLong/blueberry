@@ -3,4 +3,7 @@ package.json
 tsconfig.json
 node_modules
 dist/
+apple.txt
+gorilla.txt
+otter.txt
 
