@@ -176,3 +176,30 @@ Promise.race([
     console.log("ファイルの読み込みに長時間かかったため、タイムアウトしました。");
 });
 // 時間で区切って次の処理に移らせたい場合に役立つ(ファイルの読み込みの処理自体は中断するわけではないが...)
+
+// 8.3.7 Promiseの静的メソッド(3)
+// Promise.allSettled()は、必ず成功のPromiseオブジェクトを返す。
+// 与えられたPromiseオブジェクトが成功しても失敗しても挙動は変わらず、必ず成功のPromiseオブジェクトを返す。
+// 成功でも失敗でもいいから、全てのPromiseオブジェクトの処理を最後まで見届けたいときにPromise.allSettledを返す。
+// 失敗する非同期処理
+const sleepReject1 = (duration: number) => {
+    return new Promise<never>((reject) => {
+        setTimeout(reject, duration);
+    });
+};
+// 成功する非同期処理
+const success = (num: number) => {
+    new Promise<number>((resolve) => {
+        return resolve(num);
+    });
+}
+
+Promise.allSettled([
+    sleepReject1(1000),
+    success(1000)
+    // Promise.allSettledがthen句に渡す結果は、オブジェクト型の配列となる。
+    // この配列には成功と失敗の情報が入り混じって格納される。これがPromise.allSettled特徴
+]).then(([failed, succeeded]) => {
+    console.log(failed);
+    console.log(succeeded);
+});
