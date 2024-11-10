@@ -254,3 +254,56 @@ p13.then((result) => {
 })
 // 複数の非同期処理を並行して実行するか、直行で実行させるかを決める際に、非同期処理間の依存関係の有無を確認して判断するべき。
 // ②の非同期処理が①の非同期処理の結果を利用しているのなら、➀→➁の直行で(then)でつなぐ処理にするべき。
+
+// 8.3.10 Promiseチェーン(3) エラーの扱い
+// コールバック関数内で例外をthrowさせることで、成功したPromiseの結果を失敗に変更することができる。
+const p15 = readFile("otter.txt", "utf-8");
+const p16 = p15.then((result) => {
+    // Promiseの失敗を引き起こす。
+    throw new Error("Error!!!!");
+});
+// 失敗が引き起こされたのでこの処理は実行されない
+p16.then((result) => {
+    console.log(result);
+});
+
+// 失敗したPromiseに何もコールバック関数が登録されていなかったときにUnhandledPromiseRejectionエラーが出る。
+const q = readFile("otter.txt", "utf-8")
+    .then(() => sleepReject(1000))
+    .then((result) => {
+        console.log(result);
+    })
+    // catchによって失敗を成功に変換する
+    .catch((err) => {
+        console.log("エラーが発生しました!!!", err);
+    });
+
+    q.then(() => {
+        console.log("終了")
+    });
+// thenやcatchは新しいPromiseオブジェクトを作成するが、末端のPromiseは必ず成功するようにする。
+
+// 以下のコードは、ファイルの読み取りに失敗するとUnhandledPromiseRejectionエラーが出る。
+// つまり、失敗したのにコールバッグ関数が登録されていないことを意味する。
+const q1 = readFile("apple.txt", "utf-8");
+q1.then((result) => {
+    console.log("成功",result);
+}); 
+//こいつが失敗したときのコールバック関数が登録されていない。
+// q1.thenが出力する失敗オブジェクトのエラーハンドリングがされていない。
+// 下のq1.catchはq1に対するエラーハンドリング。q1.thenが出力する新しいPromiseオブジェクトに対してではない。
+// 処理をスキップするが、結果を伴う新しいPromiseオブジェクトは生成してます。
+q1.catch((error) => {
+    console.log("失敗", error);
+});
+// これの理由により、1つのPromiseに対してthenとcatchを別々に呼び出すべきではない。
+// 以下が修正したコード。req1が成功した場合OK。失敗した場合、req2に失敗したオブが格納されるが、それに対してcatchが用意されているのでOK。
+const req1 = readFile("apple.txt", "utf-8")
+// 失敗が伝播するreq1.thenで吐き出す失敗Promiseオブジェクトがreq2に伝播する。
+const req2 = req1.then((result) => {
+        console.log("成功", result);
+    })
+const req3 = req2.catch((error) => {
+        console.log("失敗", error);;
+    })
+// このように失敗の可能性があるPromiseオブジェクトにコール関数がしっかりと登録されるようにすべき。
