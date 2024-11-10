@@ -203,3 +203,54 @@ Promise.allSettled([
     console.log(failed);
     console.log(succeeded);
 });
+
+// 8.3.8 Promiseチェーン(1) チェーンを作る
+// catch()の戻り値もPromiseオブジェクト
+// catch()の後にthenを使用することが可能。
+readFile("apple.txt", "utf-8")
+.catch(() => "ファイルの読み込みに失敗しました。"
+).then((result) => {
+    console.log(result);
+});
+
+const p9 = readFile("apple.txt", "utf-8");
+// p9が成功したときにcatchはスキップされるが、新しいp9の結果を持つ新しいPromiseオブジェクトを返す。
+// だから、p9が成功したときにp9.catchがスキップされたとしても、p10に新しいPromiseオブジェクトが渡されることになる。(大切)
+const p10 = p9.catch(() => "");
+p10.then((result) => {
+    console.log(result);
+})
+// then句がスキップされる場合も同じ。失敗の結果を持つ新しいPromiseオブジェクトが次に渡される。(大切)
+
+// 8.3.9 Promiseチェーン(2) 非同期処理の連鎖
+const p7 = readFile("otter.txt", "utf-8");
+const p8 = p7.then((result) => result + result);
+p8.then((result) => {
+    console.log(result);
+});
+
+const repeat10 = (str : string) => {
+    const p11 = new Promise<string>((resolve) => {
+        setTimeout(
+            () => resolve(str.repeat(10)), 1000);
+        
+    });
+};
+
+readFile("otter.txt", "utf-8")
+.then((result) => {repeat10(result)})
+.then((result) => {
+    console.log(result);
+});
+
+// ↓メソッドチェーンではない書き方
+const p12 = readFile("apple.txt", "utf-8");
+const p13 = p12.then((result) => {
+    const p14 = repeat10(result);
+    return p14;
+});
+p13.then((result) => {
+    console.log(result);
+})
+// 複数の非同期処理を並行して実行するか、直行で実行させるかを決める際に、非同期処理間の依存関係の有無を確認して判断するべき。
+// ②の非同期処理が①の非同期処理の結果を利用しているのなら、➀→➁の直行で(then)でつなぐ処理にするべき。
