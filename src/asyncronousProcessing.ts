@@ -307,3 +307,140 @@ const req3 = req2.catch((error) => {
         console.log("失敗", error);;
     })
 // このように失敗の可能性があるPromiseオブジェクトにコール関数がしっかりと登録されるようにすべき。
+
+// 8.4 async/await構文
+// async関数とその中で使用されるawait式
+
+// 8.4.1 async関数を作ってみる
+// async関数の返り値の型は必ずPromiseになる。<Promiseの結果>
+// ↓3を結果とするPromiseを返す関数
+async function get3(): Promise<number>{
+    return 3;
+}
+
+const q2 = get3();
+// Promiseを経由しているので、thenのコールバック関数は非同期的に実行される。→(処理が完了次第実行される)
+q2.then(num => {
+    console.log(`num is ${num}`);
+});
+
+async function get5(): Promise<number>{
+    console.log("get5が呼び出されました");
+    return 5;
+}
+
+console.log("get5を呼び出します");
+const q3 = get5();
+q3.then((result) => {
+    console.log(`result is ${result} `);
+});
+console.log("get5が呼び出しました");
+// 以下実行結果
+/*
+get5を呼び出します
+get5が呼びだされました
+get5を呼び出しました
+result is 5
+ */
+
+// async関数の中身が同期的に実行される。(ただ上から順に実行されるだけね)
+// Promiseの解決に伴うコールバック関数の呼び出しは非同期的に行われる。つまり、いま同期的に行われている実行には割り込めない。
+// async関数自体は通常の関数と同じく同期的に行われる。それに対するコールバック関数が「非同期的」に行われる。
+// async関数内で例外が起きた場合は、戻り値のPromiseの結果が失敗となる。
+// 以上のことから、async関数の結果を使って、非同期的に処理をしたい場合にasunc関数が使用される。
+
+// 8.4.2 await式も使ってみる
+// await式はasync関数の中で使う
+// 「意味は与えられたPromiseの結果が出るまで待つ」
+const slept = (duration: number) => {
+    return new Promise<void>((resolve) => {
+        setTimeout(resolve, duration);
+    })
+}
+
+async function get6(): Promise<number>{
+    await slept(1000);
+    return 6;
+}
+
+const q4 = get6();
+q4.then(result => {
+    console.log(`result is ${result}`);
+});
+// 1秒後にresult is 6 が表示される。
+
+const sleeping = (duration: number) => {
+    return new Promise<number>((resolve) => {
+        setTimeout(resolve, duration);
+    });
+};
+
+async function get7(){
+    console.log("get7が呼び出されました");
+    await sleeping(1000);
+    console.log("awaitの次に進みました")
+    return 7;
+}
+
+console.log("get7を呼び出します");
+const q5 = get7();
+q5.then((result) => {
+    console.log(`result is ${result}`);
+});
+console.log("get7を呼び出しました");
+/*
+ * get7を呼び出します
+ * get7が呼び出されました
+ * get7を呼び出しました
+ * ★表示されてから1s後
+ * awaitの次に進みました
+ * result is 7
+ */
+
+// async関数中でawaitを使うことで、async関数が返したPromiseの結果の決定を遅らせることができる。
+// なぜなら、await関数で処理が中断されるため、async関数のreturn文までたどり着かないから
+
+// 8.4.3 awaitの返り値(await関数に返値がある場合は、Promiseオブジェクトではなく、その結果が返値となる。thenの代わり)
+const sl = (duration: number) => {
+    return new Promise<void>((resolve) => {
+        setTimeout(resolve, duration);
+    })
+};
+
+async function get8(){
+    await sl(1000);
+    return 8;
+}
+
+async function main(){
+    // 各await毎に処理が中断する
+    const num1 = await get8();//1秒後にawaitが完了してPromiseの結果が確定する。その結果がawaitの「返値」となる。
+    const num2 = await get8();//1秒後にawaitが完了してPromiseの結果が確定する。その結果がawaitの「返値」となる。
+    const num3 = await get8();//1秒後にawaitが完了してPromiseの結果が確定する。その結果がawaitの「返値」となる。
+    return num1 + num2 + num3;
+}
+
+main().then((result => {
+    console.log(`result is ${result}`);
+}));
+// 3秒後にresult is 9と表示する。(main()が返したPromiseが完了するまでに3秒かかるということ)
+
+// 別の例 apple.txtに書いてあるデータを二倍にしてotter.txtに書き込む
+async function main2(){
+    const {readFile, writeFile} = await import("fs/promises");
+
+    const appleContent = await readFile("apple.txt", "utf-8");
+    // 2倍にしてotter.txtに書き込む
+    await writeFile("otter.txt", appleContent + appleContent);
+    console.log("書き込み完了しました");
+}
+
+main2().then(() => {
+    console.log("main()が完了しました");
+});
+// 実行すると一瞬で「書き込み完了しました」、「main()が完了しました」と表示される
+// async関数の結果が確定するタイミングは、関数内の処理の一番下にたどり着いたとき。
+
+// 以上のように、await式を使うと「ある非同期処理が終わってから次の非同期処理をする」というプログラムをまるで同期プログラムのように
+// 上から下に進むという流れに則った形で書くことができる。これがasync/awaitの魅力
+// いちいちreadFile().then()のようにすることよりも記述がシンプルになる。
