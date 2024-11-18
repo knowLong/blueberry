@@ -6,6 +6,7 @@
 // 失敗した場合は、登録したcatchメソッドが実行される。
 // then句内の引数には、成功の場合の結果が渡される。
 
+import { writeFile } from "fs";
 import {readFile} from "fs/promises"
 import { resolve } from "path";
 const p = readFile("foo.txt", "utf8");
@@ -466,3 +467,20 @@ async function main3(){
 main3().then(() => {
     console.log("main3()が成功しました。");
 });
+
+// 8.4.5 async関数のいろいろな宣言方法
+// async function式
+const main4 = async function(){
+    const {readFile, writeFile} = await import("fs/promises");
+    const appleContent = await readFile("apple.txt", "utf-8");
+    await writeFile("otter.txt", appleContent + appleContent);
+    console.log("書き込み完了しました");
+};
+
+// asyncアロー関数式の例
+const main5 = async () => {
+    const {readFile, writeFile} = await import("fs/promises");
+    const appleContent = await readFile("apple.txt", "utf-8");
+    await writeFile("otter.txt", appleContent + appleContent);
+    console.log("書き込み完了しました");
+}
