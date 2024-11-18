@@ -444,3 +444,25 @@ main2().then(() => {
 // 以上のように、await式を使うと「ある非同期処理が終わってから次の非同期処理をする」というプログラムをまるで同期プログラムのように
 // 上から下に進むという流れに則った形で書くことができる。これがasync/awaitの魅力
 // いちいちreadFile().then()のようにすることよりも記述がシンプルになる。
+
+
+// 8.4.4 awaitとエラー処理
+// await p は、pが失敗した場合はpが成功した場合はpの結果を返り値とする一方で、pが失敗した場合はその結果を例外として発生させる。
+// awaitで発生した例外はtry-catch文でキャッチすることができる。
+async function main3(){
+    const {readFile, writeFile} = await import("fs/promises");
+
+    try {
+        const appleContent = await readFile("apple.txt", "utf-8");
+        await writeFile("otter.txt", appleContent + appleContent);
+        console.log("書き込み完了しました");
+    } catch {
+        console.log("失敗しました");
+    }
+}
+
+// awaitが失敗しようが成功しようが「main3()が成功しました。」は表示される。
+// catch節を通ったとしても、main3()のPromiseは成功という結果になる。だから、then句の処理が走る。
+main3().then(() => {
+    console.log("main3()が成功しました。");
+});
