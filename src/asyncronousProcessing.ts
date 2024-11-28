@@ -484,3 +484,198 @@ const main5 = async () => {
     await writeFile("otter.txt", appleContent + appleContent);
     console.log("書き込み完了しました");
 }
+
+// 第6章 高度な型
+// 6.1 ユニオン型とインターセクション型
+// 6.1.1 ユニオン型の基本
+type Animal = {
+    speacies: string;
+};
+type Human = {
+    name: string;
+}
+
+type User = Animal | Human;
+
+const tama: User = {
+    speacies: "こんにちは"
+};
+
+const uhyo: User = {
+    name: "uhyo",
+};
+
+// 存在しない場合があるプロパティにはアクセスすることができない
+console.log(tama.speacies);
+
+// 6.1.2 伝播するユニオン型
+type Animal2 = {
+    speacies: string;
+    age: string;
+};
+type Human2 = {
+    name: string;
+    age: number;
+};
+type User2 = Animal2 | Human2;
+const tama2: User2 = {
+    speacies: "犬",
+    age: "10歳",
+};
+ const uhyo2: User2 = {
+    name: "聡",
+    age: 40,
+ };
+ // ageはAnimal2とHuman2のどちらにも必ず存在するからプロパティアクセスすることができる
+ // ユニオン型で、プロパティのアクセスの型が異なれば、プロパティの戻り値もユニオン型になる
+ function showAge(user: User2) {
+    const age = user.age;
+    console.log(age);
+ }
+
+ // 関数のユニオン型
+ type MysteryFunc = 
+    | ((str: string) => string)
+    | ((str: string) => number);
+
+// 高級関数。関数を受け取って、その関数を呼び出す関数。
+function useFunc(func: MysteryFunc){
+    const result = func("chiku");
+    console.log(result);
+}
+
+/*
+ ユニオン型を用いると「string | () => number」のように、関数かもしれないしそうでないかもしれない型を作ることができますが、
+ そのような変数で関数を呼び出すとコンパイルエラーとなる。
+*/
+type MaybeFunc = 
+    | ((str: string) => string)
+    | string;
+
+function useFunc2(func: MaybeFunc){
+    //呼び出すことはできない
+    //const result = func("chiku");
+}
+
+// 6.1.3 インターセクション型とは
+// オブジェクト型を拡張した新しい型を作る
+type Animal3 = {
+    speacies: string;
+    age: number;
+}
+
+type Human3 = Animal3 & {
+    name: string
+}
+
+const tama3: Animal3 = {
+    speacies: "猫",
+    age: 21,
+};
+
+const uhyo3: Human3 = {
+    speacies: "人",
+    age: 25,
+    name: "chiku",
+};
+
+// Human3は以下の型定義と同じである
+type Human33 = {
+    speacies: string;
+    age: number;
+    name: string;
+};
+
+// このようにオブジェクト型同士のインターセクション型を取った場合、両者が合成されたオブジェクト型となる。
+// &で作られた型は、構成要素の部分型となる。
+
+// 異なるプリミティブ型同士のインターセクション型を作った場合はnever型（属する型がない型）が出現します。
+type StringAndNumber = string & number;
+// stringかつnumberを満たす値は存在しないからねーーーー
+
+// しかし、、Animal3 & string はnever型にならない
+// →理由はTypeScriptではオブジェクト型にプリミティブ値が当てはまることがあるため、「オブジェクト&プリミティブ」がneverにならない。
+// 3.7.5 プリミティブなのにプロパティがある？
+const str = "こんにちは、世界";
+console.log(str.length);
+// プリミティブに対して、プロパティアクセスを行う度に一時的にオブジェクトが作られる。
+// 疑似的にプロパティを持つという性質により、TypeScriptの型システム上では、プリミティブがオブジェクト型になることある。
+type HasLength = {length: number};
+const obj: HasLength = "こんにちは";
+type StringAndObject = HasLength | string;
+const strAndobj: StringAndObject = "こんにちは";
+
+// 6.1.4 ユニオン型とインターセクション型の表裏一体
+type Human4 = {name: string};
+type Animal4 = {speacies: string};
+function getName(human: Human4){
+    return human.name;
+}
+function getSpeacies(animal: Animal4){
+    return animal.speacies;
+}
+
+const mysteryFunc = Math.random() < 0.5 ? getName : getSpeacies;
+//mysteryFuncのユニオン型は、「Human型の値を受け取ってstring型の値を返す関数かもしれないし」「Animal型の値を受け取ってstring型の値を返す関数」
+//かもしれない。mysteryFuncには関数が代入される。
+// mysteryFuncはHumanを受け取るとは限らないので、引数にHuman4型に値を渡すことはできないし、その一方で、Animal4を受け取るとは限らないので、
+// Animal4を渡すこともできない。
+// ユニオン型である関数はどの関数型であるか不明であり、よってどんな引数を受け取るのか不明になるから、難しい。
+// ではユニオン型の関数を呼び出す方法は？
+// 答えは、、、どちらの関数の引数にもなれるような型(インターセクション型)の値を引数に渡す
+const uhyo4: Human4 & Animal4 = {
+    name: "uhyo",
+    speacies: "人"
+};
+const result = mysteryFunc(uhyo4);
+
+// 6.1.5 オプショナルプロパティ再訪
+type Human5 = {
+    name: string;
+    // オプショナルプロパティを持つプロパティは必然的にユニオン型を持つ。
+    // number|undefined ageプロパティを取得すると、それはnumber型の値かもしれないし、undefined型の値つまりundefinedかもしれないということ。
+    age?: number;
+};
+
+const est: Human5 = {
+    name: "take",
+    age: 35
+};
+
+const naiko: Human5 = {
+    name: "sato",
+};
+
+// オプショナルなプロパティに対して明示的にundefinedを設定することが可能
+const optest: Human5 = {
+    name: "テスト",
+    age: undefined,
+};
+
+// age?: numberとage: number|undefinedは意味が異なることに注意が必要
+// age?: numberはプロパティを設定しなくてもよい一方、age: number|undefinedは必ずプロパティ値(数字かundefined)を設定しなければならない
+type Human6 = {
+    name: string;
+    age: number|undefined;
+};
+
+const test6: Human6 = {
+    name: "test6",
+    age: undefined,
+};
+
+const nice6: Human6 = {
+    name: "ないす",
+    age: 23,
+};
+
+// オプショナルではないのにageを設定していないから下記はエラーになる。
+// const nice8: Human6 = {
+//     name: "エラー",
+// }
+
+// 一般的に、age?: numberを使う場合は、いちいちundefinedを設定しなくてもよい利便性があるが、故意に設定していないのか、それとも設定ミスなのかが
+// コンパイルエラーとかで表現されないからわからない。
+// age: number|undefinedでは、書き忘れとかない。なぜなら、コンパイルエラーで検知できるから。
+// このようにプロパティがあるかもしれないし、ないかもしれないことは2パターンで表すことができる。
+// オプショナルプロパティを使う方法と、ユニオン型でundefinedを型として定義する方法。
