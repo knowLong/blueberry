@@ -679,3 +679,57 @@ const nice6: Human6 = {
 // age: number|undefinedでは、書き忘れとかない。なぜなら、コンパイルエラーで検知できるから。
 // このようにプロパティがあるかもしれないし、ないかもしれないことは2パターンで表すことができる。
 // オプショナルプロパティを使う方法と、ユニオン型でundefinedを型として定義する方法。
+
+/**
+ * 6.1.6 オプショナルチェイニングによるプロパティアクセス
+ */
+// オプショナルアクセスとは、obj.propと書くのではなく、obj?.propと書いてオブジェクトのプロパティにアクセスする。
+// オプショナルチェイニングとはアクセスされるオブジェクトがnullやundefinedでも利用できること。
+// 通常のobj.propではobjがnullやundefinedである場合は使用できない。
+// obj?.propでobjがnullやundefinedの場合、ランタイムエラーは発生せず結果はundefinedになる。
+// プログラムによってはHuman | undefinedのように「nullやundefinedかもしれないオブジェクト」を扱う機会が多くあり、「Humanだったらプロパティアクセスするが、undefinedだったら」
+//アクセスしないという取り扱いは頻出
+type Human7 = {
+    name: string;
+    age: number;
+};
+
+function useMaybeHuman(human: Human7 | undefined) {
+    // 変数ageの方はnumber | undefinedになっている。
+    const age = human?.age;
+    console.log(age);
+}
+// 関数呼び出しのオプショナルチェイニングとメソッド呼び出しのオプショナルチェイニングがある。
+// 引数に何も入れないで、戻り値の型がDate型の関数の型
+type GetTimeFunc = () => Date;
+function useTime(getTimeFunc: GetTimeFunc | undefined){
+    // 関数呼び出しに対してオプショナルチェイニングを使用する際には関数名と()の間に?.を付ける。
+    // 関数が与えられているときのみ呼び出したいときはこれを使いましょう。
+    const timeOrUndefined = getTimeFunc?.();
+}
+// メソッドのオプショナルチェイニング呼び出し方法
+// obj?.method()とする
+// objがnullまたはundefinedの時obj?.method()はundefinedを返す
+type User3 = {
+    isAdult(): boolean;
+}
+
+// userはisAdult()メソッドを持つオブジェクト
+function checkForAdultUser(user: User3 | null) {
+    //ログインユーザの時、userはnullではない
+    //成人済みの時はisAdult()がtrueを返すようにしている
+    //undefinedを真偽値判定をするとfalseとなる
+    if (user?.isAdult()){
+        console.log("ログインユーザかつ成人済みですね");
+    }
+}
+// 未成年ユーザのみとしたい場合は、user?.isAdult() === falseとすればよい
+
+type GetTimeFunc1 = () => Date;
+
+function useTime1(getTimeFunc1: GetTimeFunc1){
+    // timeStringOrUndefinedはundefined | string型
+    const timeStringOrUndefined = getTimeFunc1?.().toString();
+}
+// オプショナルチェイニング「.?」では、undefined判定が起きたらその後のチェーンは実行されないでundefinedを返す
+// 上記のgetTimeFunc1?.()がundefinedであった場合、toString()は実行されない。だからコンパイルエラーにならない。
