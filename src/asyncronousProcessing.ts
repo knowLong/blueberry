@@ -733,3 +733,88 @@ function useTime1(getTimeFunc1: GetTimeFunc1){
 }
 // オプショナルチェイニング「.?」では、undefined判定が起きたらその後のチェーンは実行されないでundefinedを返す
 // 上記のgetTimeFunc1?.()がundefinedであった場合、toString()は実行されない。だからコンパイルエラーにならない。
+
+// 6.2 リテラル型
+// 6.2.1 4種類のリテラル型
+// リテラル型はプリミティブ型をさらに細分化したもの。
+
+// これは"foo"という文字列のみが属するリテラル型
+// 右辺の"foo"はリテラル型を表す
+type FooString = "foo";
+
+// これはOK
+// 右辺の"foo"は式(文字列)を表す
+const foo: FooString = "foo";
+
+// エラー: Type '"bar"' is not assignable to type '"foo"'
+//const bar: FooString = "bar";
+
+// 文字リテラルは、式として使えば文字列を表す式になる一方で、型として使えばそのリテラル型になるとうに、使われる位置によって2つの意味を持つ。
+
+// リテラル型には4種類がある。
+/**
+ * 文字列のリテラル型
+ * 数値のリテラル型
+ * 真偽値のリテラル型
+ * BigIntのリテラル型
+ */
+// 文字列のリテラル型
+const foo1: "foo1" = "foo1";
+// 数値のリテラル型
+const num: 1 = 1;
+// 真偽値のリテラル型
+const bl: true = true;
+// BigIntのリテラル型
+const bi: 3n = 3n;
+
+// 6.2.2 テンプレートリテラル型
+function getHellStr(): `Hello, ${string}!`{
+    const rand = Math.random();
+    if(rand < 0.3){
+        return "Hello, world!";
+    } else {
+        return "Hello, tateto!";
+    }
+    // } else if (rand < 0.6){
+    //     return "Hello, world";
+    // } else {
+    //     return "Hello, word";
+    // }
+}
+// 返値の文字列のテンプレートを指定する。合致しない場合はコンパイルエラーとなる。
+
+// テンプレート文字列リテラルからテンプレートリテラル型を型推論してもらうこともできる。
+function makeKey<T extends string>(userName: T){
+    return `user:${userName}` as const;
+}
+
+function fromKey<T extends string>(key: `user:${T}`): T{
+    return key.slice(5) as T;
+}
+
+const user11 = fromKey("user:こんにちは");
+
+// 6.2.3 ユニオン型とリテラル型を組み合わて使うケース
+// リテラル型は、可能な値をある特定のプリミティブ値のみに限定する機能を持っている。
+function onlytenta(tenta: "tenta"){
+    return tenta;
+}
+// 上記の関数は"tenta"文字リテラル型の引数を受け取り、"tenta"文字リテラル型文字列"tenta"を返す。
+// "tenta"以外の値を受け取ることができない。
+
+// 文字リテラル型を有効活用する方法
+/**
+ * TypeScriptでは「リテラル型のユニオン型」を作成することが頻出
+ * 例えば、「"new"という文字列を受け取るだけの関数」はあまり意味がないが、「"new"または"edit"の文字列を受け取る関数」は使い勝手が良い
+ */
+// 与えられた引数によって処理を変えている
+function newOredit(moji: "new"|"edit"){
+    return moji === "new" ? "新規" : "編集中";
+}
+newOredit("new");
+newOredit("edit");
+// ↓コンパイルエラー。引数で指定された文字列リテラル型の文字列を渡していないから。
+//newOredit("hello");
+
+// booleanではなく文字列とすることで視覚的にコードの意味がわかりやすい
+// また、文字列全種類が必要ではなくいくつかの特定の値のみを受け付けたいという場合にユニオン型とリテラル型の組み合わせが非常に適している
