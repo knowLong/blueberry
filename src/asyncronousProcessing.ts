@@ -818,3 +818,77 @@ newOredit("edit");
 
 // booleanではなく文字列とすることで視覚的にコードの意味がわかりやすい
 // また、文字列全種類が必要ではなくいくつかの特定の値のみを受け付けたいという場合にユニオン型とリテラル型の組み合わせが非常に適している
+
+// 6.2.4 リテラル型のwidening
+// リテラル型が自動的に対応するプリミティブ型に変化するという挙動。2つある。
+// 1 letで宣言された変数に代入された場合
+const tes = "tes";
+let tes1 = "tes";
+//tes1 = 3;
+// letの場合は、リテラル型ではなくプリミティブ型と型推論される。letは再代入を許容する変数だからです。
+// 初期値に対応するプリミティブ型に変化するため、初めに文字列を代入していたらletといえども、数値型の値を代入することはできない。
+// 型推論ではなく、ユニオン型で型をしてあげれば代入可能
+let numOrstr: number|string = "test";
+numOrstr = 1;
+
+// 特定の文字列のみを再代入できるようにするにはリテラル型のユニオン型とする。
+let select: "new"|"edit" = "new";
+select = "edit";
+
+// 2 オブジェクトリテラルの中
+const tet = {
+    name: "uh",
+    age: 26,
+};
+// オブジェクトのプロパティ値はリテラル型ではなくプリミティブ型となる
+// なぜなら、オブジェクトの中身はletと同様に、後から書き換え可能だから。(readonlyがなければね)
+type cno = {
+    name: "sty",
+    age: number,
+}
+
+const fa: cno = {
+    name: "sty",
+    age: 67,
+};
+
+function useNumber(type: number){
+    return type > 0 ? "plus" : type < 0 ? "minus" : "zero";
+}
+function signNumber(type: "plus"|"minus"){
+    return type === "plus" ? 1 : -1;
+}
+
+// 6.2.5 wideningされるリテラル型・wideningされないリテラル型
+// リテラル型の中にもwideningされるリテラル型とwideningされないリテラル型がある。
+// wideningされるリテラル型は式としてのリテラル型に足して型推論されたもののみ。
+// 一方で、プログラマが明示的に書いたリテラル型はwideningされないリテラル型となる。
+// wideningされる"uhyo"型
+const uhyo5 = "uhyo5";
+// wideningされないリテラル型
+const uhyo6: "uhyo6" = "uhyo6";
+
+//string型(型を明示的に指定していないからstring型)
+let uhyo7 = uhyo5;
+// uhyo6型(明示的にリテラル型を指定しているからuhyo6型)
+let uhyo8 = uhyo6;
+
+// 6.3 型の絞り込み
+// 型の絞り込みとは、ユニオン型を持つ値が実際にはどちらの値なのかをランタイムに特定するコードを書くことで型情報がそれに応じて変化すること。
+// 型の絞り込みにより与えられた値が特定の型の場合のみ処理を行うということが可能になる。
+// 型の絞り込みは、コントロールフロー解析(control flow analysis)という。
+// 6.3.1 等価演算しを用いる絞り込み
+
+type which = "cat" | "dog";
+function dogOrcat(type: "cat"|"dog"): string{
+    return type === "cat" ? "猫です" : "犬です"
+}
+function dogOrcatOrothers(test: which | "others"): string{
+    if(test === "others"){
+        return "猫でも犬でもありません";
+    } else {
+        // ここにはwhich型の場合しか来ない。だからdogOrcatがコンパイルエラーにならない。
+        // elseの中のtestはwhichしかありない。型の絞り込みが効いている証。TypeScriptはこの文脈を理解している。
+        return dogOrcat(test);
+    }
+}
