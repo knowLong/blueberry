@@ -1091,3 +1091,55 @@ const jun2: ObjKeys = 1;
 //     const keyName: string = key;
 //     return obj[key];
 // }
+
+// 6.5.1 型アサーションを用いて式の型をごまかす
+// 型アサーションの仕様は極力避けるべきだ
+// 型アサーションを使うと、string | number型の値を強制的にstring型の値にすることができる。
+function getFirstFiveLetters(strOrNum: string | Number){
+    const str = strOrNum as string;
+    return str.slice(0,5);
+}
+// あいうえお
+console.log(getFirstFiveLetters("あいうえおかきくけこ"));
+// ランタイムエラー
+// TypeScriptのコンパイル上では問題ないが、実際に実行されたときにstrに格納されている値はNumber型の値。
+// それにより、Number型の値がstring型が持つメソッドを呼び出していることから実行時エラー(ランタイムエラー)となる。
+// TypeScriptでは、asを優先して信じるため、コンパイルエラーを発生させない。
+console.log(getFirstFiveLetters(123));
+
+// ではas(型アサーション)の用途は何なの？
+type ani = {
+    tag: "animal";
+    speacies: string;
+}
+type hum = {
+    tag: "hum";
+    name: string;
+}
+type us = ani | hum;
+
+function getNameIfAllhum(users: readonly us[]): string[] | undefined {
+    if (users.every(user => user.tag === "hum")){
+        return users.map(user => user.name)
+    }
+    return undefined;
+}
+
+// 6.5.2 as Constの用法
+// とても重要な文法
+// as constも値の型を指定する文法
+const names1 = ["uhyo", "john", "taro"];
+const names2 = ["uhyo", "john", "taro"] as const;
+// as const がつけられた式に登場する各種リテラルを「変更できない」ものとして扱うことを表すと理解する。
+/**
+ * 要素数が変更できない(要素数が増減しないタプル型)
+ * readonlyでプロパティ値を変更できない
+ * 後から変更されないので、要素の型がリテラル型となるつまり、wideningされない(後から変更されることを考慮してwidening機能がついていたが、その心配がない。)
+ */
+// 値を決めた後に型を決める。これにより、型を定義する作業と型を使って値を設定する作業の二つをまとめて実施することが可能となる。
+// 今回の場合は、文字列リテラル型を持つ配列を宣言するとともに、その文字列リテラル型を持つ配列の型を作成している。as constのおかげでwideningしないので。
+const names = ["uhyo", "john", "taro"] as const;
+type Name = (typeof names)[number];
+const nai: Name = "john";
+
+// 6.6.1 any型という最終兵器
