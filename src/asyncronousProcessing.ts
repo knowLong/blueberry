@@ -892,3 +892,202 @@ function dogOrcatOrothers(test: which | "others"): string{
         return dogOrcat(test);
     }
 }
+
+// 6.3.2 typeof演算子を用いる絞り込み
+// 等価演算子以外に、typeof演算子を使うことで型を絞り込むことが可能
+// typeof演算子はユニオン型に対して絞り込みを行いたい場合に有効
+// number型ならこの処理を、string型ならこっちの処理を見たいにできる。
+function formatNumberOrString(value: number | string){
+    if(typeof value === "number"){
+        return value.toFixed(3);
+    } else {
+        return value;
+    }
+}
+
+// 6.3.3 代数的データ型をユニオン型で再現するテクニック
+type Animal5 = {
+    tag: "animal";
+    speacies: string;
+}
+type Human8 = {
+    tag: "human";
+    name: string;
+}
+type User4 = Animal5 | Human8;
+
+const tama4: User4 = {
+    tag: "animal",
+    speacies: "konnitiha"
+};
+const uhyo9: User4 = {
+    tag: "human",
+    name: "yooo",
+};
+
+//代入不可
+// const alien: User4 = {
+//     tag: "alien",
+//     name: "gray",
+// };
+// なぜならnameのプロパティ値は文字列リテラル型の"animal"か"human"しか許容しないから。
+
+// nameを取得する関数getUserNameを定義する。Animalの場合は名無しとする。
+function getUserName(yuzaa: User4){
+    if(yuzaa.tag === "human"){
+        return yuzaa.name;
+    } else {
+        return "名無し";
+    }
+}
+
+const tame: User4 = {
+    tag: "animal",
+    speacies: "こんにちは"
+};
+const fan: User4 = {
+    tag: "human",
+    name: "winner"
+};
+
+// 名無しと出る
+console.log(getUserName(tame));
+// winnerと出る
+console.log(getUserName(fan));
+
+// オブジェクトに判別用プロパティを設定する。
+// そのプロパティを取得して判定すれば、オブジェクトごとに処理を変えることができる。
+// つまり、ユニオン型のオブジェクトで、どっちの型のオブジェクトであるのかを判定している。判定すれば、プロパティを取得可能になる。
+
+// 6.3.4 switch文でも型を絞り込める
+type deku = {
+    tag: "deku";
+    speacies: string;
+}
+type naru = {
+    tag: "naru";
+    name: string;
+}
+type luf = {
+    tag: "luf";
+    name: string;
+}
+type jum = deku | naru | luf;
+function getUN(u: jum): string{
+    switch(u.tag){
+        case "naru":
+            return u.name;
+        case "deku":
+            return "名無し";
+        case "luf":
+            return u.name;
+    }
+}
+
+// 6.4.1 lookup型とは
+type hito = {
+    type: "human";
+    name: string;
+    age: number;
+};
+
+// type hitoのageの型が変更されたら、それに合わせて第二引数の型も変化する。メソッドに変更を加える必要が無いことは楽。しかし、一見して型がわかりずらいのがデメリット。
+function setAge(hito: hito, age: hito["age"]){
+    return {
+        ...hito,
+        age,
+    };
+}
+const ushi: hito = {
+    type: "human",
+    name: "ushi",
+    age: 26,
+};
+const ushi2 = setAge(ushi, 27);
+console.log(ushi2);
+
+// 6.4.2 keyof型
+type creature = {
+    name: string;
+    age: number;
+};
+// "name" | "number"
+// keyof mmm はプロパティ名の文字列のリテラル型となる。
+type creatureKeys = keyof creature;
+
+let key: creatureKeys = "name";
+key = "age";
+
+const mmConversionTable = {
+    mm: 1,
+    m: 1e3,
+    km: 1e6,
+};
+
+function convertUnits(value: number, unit: keyof typeof mmConversionTable){
+    const mmValue = value * mmConversionTable[unit];
+    return {
+        mm: mmValue,
+        m: mmValue/ 1e3,
+        km: mmValue/ 1e5,
+    };
+}
+
+console.log(convertUnits(5600, "m"));
+
+// keyof型・lookup型とジェネリクス
+function get<T, K extends keyof T>(obj: T, key: K): T[K]{
+    return obj[key];
+}
+
+type hu = {
+    name: string;
+    age: number;
+}
+
+const uho: hu = {
+    name: "ushi",
+    age: 13
+};
+// 引数によってgetメソッドの返値の型が異なる。
+// このように場合によって返値の型が異なる関数は、TypeScriptではジェネリクスで表現する。
+// get関数ではTとKという2つの型引数を持ちますが、get呼び出し時には明示的にTやKに与えられる型は指定されていない。
+// この場合、型引数は引数の値から推論される。
+// 「K extends keyof T」 とは「Kはkeyof Tの部分型でなければならない」という意味。
+// keyof Tは　"name" | "age"であるので、K は "name" あるいは "age" あるいは "name" | "age"　である。
+const uhoName = get(uho, "name");
+const uhoAge = get(uho, "age");
+
+// 下記はコンパイルエラーになる
+// なぜなら、T[K]というものが正しいかわからないからである。
+// Tはなんらかのオブジェクトで、KはTオブジェクトが持つプロパティ名の文字列リテラル型でなければならない。
+// やはり、K extends typeof Tで、Kに制約を課してKがTのプロパティ名の文字列リテラルであることを保証する必要がある。
+// このように、keyofは型引数に対しても効力を発揮できるのが凄い。
+// function getError<T, K>(obj: T, key: K){
+//     return obj[key];
+// }
+
+// 6.4.4 number型もキーになれる？
+// 数値をプロパティ名としたオブジェクトの場合に生じる
+type ob = {
+    0: string;
+    1: number;
+}
+const obj2: ob = {
+    0: "ui",
+    "1": 25,
+};
+// 呼び出すときには数値型であろうと、文字列型であろうとどちらでもよい。
+obj2["0"] = "john";
+obj2[1] = 15;
+// type ObjKeyは 0 | 1 型　つまり数値リテラル型となる。つまり、keyofが必ずしも、文字列リテラル型となるとは限らない。オブジェクトのプロパティ名の方による。
+type ObjKeys = keyof ob;
+
+const jun: ObjKeys = 0;
+const jun2: ObjKeys = 1;
+
+// function got<T, K extends keyof T>(obj: T, key: K){
+//     // key には数値リテラルやsymbolリテラルが入る可能性があるため、string型を指定することは不可。なので下記はコンパイルエラーとなる。
+//     const keyName: string = key;
+//     return obj[key];
+// }
