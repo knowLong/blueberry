@@ -1143,3 +1143,76 @@ type Name = (typeof names)[number];
 const nai: Name = "john";
 
 // 6.6.1 any型という最終兵器
+// 型チェックを無効化する型
+// any型の変数に何かを代入することやany型の値を他の型の変数に代入することに対してもコンパイルエラーは発生しません。
+// any型の変数には、値、オブジェクト、関数等、どんなものでも格納できるため、呼び出す側をどんな形式で指定したとしても、コンパイルエラーが発生しない。
+function doWhatever(obj: any){
+    console.log(obj.user.name);
+    obj();
+    const result = obj * 10;
+    return result;
+}
+// 次の例のように、関数の実態にそぐわない値を引数として渡してもコンパイルエラーは一切発生しない。その代わりにランタイムエラーになる。
+doWhatever(3);
+doWhatever({
+    user9: {
+        name: "hello"
+    }
+});
+doWhatever(() => {
+    console.log("hi");
+});
+function useNumber2(num: number){
+    console.log(num);
+}
+function doWhatever2(obj: any){
+    // string型の変巣に入れられる(any型の変数はどんな型の変数にも入れることが可能)
+    const str: string = obj;
+    // その下では、number型の引数にも入れることができる矛盾
+    useNumber(obj);
+}
+// 関数の引数をanyとした場合、その関数の中はTypeScriptのコンパイルチェックが効かない無法地帯となる。
+// any型に対してはTypeScriptの型チェックが効かないため、ランタイムエラーが頻発する。
+// TypeScriptを使用するメリットが失われるため、極力anyを使わない方がbetter
+// any型の変数にはIDEの自動補完機能が働かない。それがオブジェクトなのか、それとも値なのが、判断しようがないためだ。
+// このように補完機能が働かないことも、anyを使用するデメリットだ。
+
+// 6.6.3 anyに近いが安全なunknown型
+function doNothing(val: unknown){
+    console.log(val);
+}
+
+doNothing(3);
+doNothing({
+    user56: "takeshi"
+});
+doNothing(()=>{
+    console.log("hu");
+})
+// unknownはanyと同様に引数に何を渡しても許される
+// では違いは何？
+// uknown型の場合は、中に何が入っているか不明であるという性質をTypeScriptコンパイラがリスペクトしてくれる。
+// すなわち、unknown型の値は正体がまったく不明であるため、any型よりもできることが限られている。
+// unknown型の値valに対してはval.nameのようなプロパティアクセスはコンパイルエラーが発生する。
+function doNothing4(val: unknown){
+    // any型の場合はコンパイルエラーが発生しなかったが、unknown型では発生する。
+    // const name = val.name;
+    // console.log(name);
+}
+
+// unknown型の使い方とは？？？？？？？？？？？？
+// 基本的には、ユニオン型と同様に型の絞り込みを行うことだ
+function useUnknown(val: unknown){
+    if(typeof val === "string"){
+        console.log("valは文字列です");
+        console.log(val.slice(0, 5));
+    } else {
+        console.log("valは文字列以外の何かです");
+        console.log(val);
+    }
+}
+
+useUnknown("konnnitha");
+useUnknown(null);
+
+// 引数に渡されるデータの型が定まっていない場合に、unknownのような抽象的な型を扱うことが多い。
