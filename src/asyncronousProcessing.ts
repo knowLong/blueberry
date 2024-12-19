@@ -1216,3 +1216,131 @@ useUnknown("konnnitha");
 useUnknown(null);
 
 // 引数に渡されるデータの型が定まっていない場合に、unknownのような抽象的な型を扱うことが多い。
+
+// 6.7 さらに高度な型
+// 6.7.1 object型・never型
+// object型プリミティブ以外の全ての型(オブジェクトのみ)
+
+// toStringを持つ値の型
+// これはtoStringメソッドを持つ型を定義している。このように型には、その値が持つべきメソッドも型指定可能。
+type HasToString = {
+    toString: () => string;
+}
+
+function useToString1(value: HasToString){
+    console.log(`value is ${value.toString()}`);
+}
+
+// "value is foo!"と表示される
+useToString1({
+    toString(){
+        return "foo!";
+    }
+});
+
+// "value is 3.14"と表示される。なぜなら、プリミティブ型にもtoStringメソッドを持っているから。
+useToString1(3.14);
+
+type HasToString2 = {
+    toString: () => string;
+} 
+
+function useToString5(value: HasToString2 & object){
+    console.log(`value is ${value.toString()}`);
+}
+
+useToString5({
+    toString() {
+        return "foo!";
+    }
+});
+// 引数がobject型ではないから、コンパイルエラーとなる。
+// useToString5(3.14);
+
+// never型
+// unknown型とは真逆の存在で、「当てはまる値が存在しない」という性質を持つ型
+// たとえば、never型を引数に受け取る関数を定義した場合、その関数を呼び出すことは不可能です。なぜなら、関数を呼び出すために必要なnever型の値を用意することが出来ないから。
+// 一方で、never型の値を入手した場合、never型は他の任意の型の値に代入することが可能である。
+function useNever(neverval: never){
+    const num: number = neverval;
+    const str: string = neverval;
+    const obj: object = neverval;
+    // 上記のようにnever型の値は、どのような型の変数にも代入することができる。
+    console.log(`neverval is ${neverval}`);
+}
+
+// しかし、never型の値を引数に入れることは出来ないので、下記のような呼び出しではコンパイルエラーが発生する。
+// useNever({});
+// useNever(1);
+
+// ではなぜ、never型の値を、number型やstring型、object型の変数に入れることができるのか？？？？
+// それは、never型に当てはまる値が存在しないから。そもそも、関数useNeverを呼び出すことが不可能であるからだ。
+// 何をしようとも呼び出されないので、関数内でどのように定義したとしてもコンパイルエラーが発生することはない
+// どのような型の値にも代入することができる理由は、
+// never型はすべてのかたの部分型であるからだよ。
+// never型の特徴として、never型はユニオンの中だと消える。string | never とした場合、これはstringとなる。
+
+// 下記がnever型を戻り値として返す関数である。
+function thrower(): never {
+    throw new Error("error!!!");
+}
+
+const resulttt: never = thrower();
+// 下記2行は絶対に実行されない。なぜなら関数throwerで必ず例外が発生するから。すなわち、変数resultttに値が入ることは決してない。だからnever型となる。
+const str2: string = resulttt;
+console.log(str2);
+
+// なぜ関数thorowerの返り値の値がnever型なのでしょうか。それは、関数throwerの返り値を得ることが不可能だからだよ。
+// 関数throwerは呼び出すと必ず例外が発生します。例外が発生した場合、関数から大域脱出が生じる。これは変数resultttに値が代入することが絶対に無いことを保証する。
+// なぜなら、関数の途中で、大域脱出が発生するから。
+
+// 6.7.2 型述語(ユーザー定義型ガード)
+// ユーザー定義型ガードとは、かたの絞り込みを自由に行うための仕組みだ。
+// これはany や　asといった、型安全性を破壊する恐れのある危険な機能の1つ。
+
+
+// ユーザー定義型ガードは、返値の型として型述語が書かれた特殊な関数。
+// ユーザー定義型ガードは関数、関数、関数、関数、関数、関数、関数、関数、
+// 与えられた引数が文字列または数値であることを判定するユーザー定義型ガード。
+function isStringOrNumber(value: unknown): value is string | number {
+    return typeof value === "string" || typeof value === "number";
+}
+
+const something: unknown = 123;
+
+if(isStringOrNumber(something)){
+    console.log(something.toString());
+}
+
+// なんで、value is string | numberの所を、booleanにしたら、コンパイルエラーになるのだろうか。
+// それはユーザー定義型ガードが、ユーザー定義型ガードがtrueを返したならば、引数名に与えられた値が型であるという意味になる。
+// つまり、この関数を通ることで、unknown型で型が定まっていなかったものを、特定の型としてTypeScriptに教えることができる。
+// だから、something.toString()をコンパイルエラーなしで呼び出すことができる。あ、unknownではなくて、●●の型だと絞り込みが効いている証拠。
+
+//　ただし、述語の所はプログラマーが責任を追うところだ。
+function isStringOrNumber2(value: unknown): value is string | number {
+    return typeof value === "string" || typeof value === "boolean";
+}
+// 上記の場合、valueの型がstringまたはbooleanの時、TypeScriptには、型がstringあるいはnumberとして伝えられる事になる。
+
+// ユーザー定義型ガードの有用な使用方法例
+type Humanity = {
+    type: "Human";
+    name: string;
+    age: number;
+};
+
+// この関数は与えられた値がHuman型の条件を満たすかどうかをランタイムに判定する。
+// これがtrueの時、引数に入れられたany型の値の型はHumanityとTypeScriptは判断する。
+function isHuman(value: any): value is Humanity{
+    // プロパティアクセス出来ない可能性を排除
+    if(value == null){
+        return false;
+    }
+    // 3つのプロパティの型を判定
+    return (
+        value.type === "Human" &&
+        typeof value.name === "string" &&
+        typeof value.age === "number"
+    );
+}
